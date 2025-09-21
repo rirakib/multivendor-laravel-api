@@ -156,4 +156,60 @@ class ProductQuery
             return GlobalPaginator::format($paginated);
         });
     }
+
+
+    public function productSearch($key)
+    {
+        $page = request()->get('page', 1);
+        $perPage = request()->get('per_page', 20);
+
+        $searchKey = trim($key);
+
+        $cacheKey = "products_search_" . md5($searchKey) . "_page_{$page}_{$perPage}";
+
+        return Cache::remember($cacheKey, 3600, function () use ($searchKey, $page, $perPage) {
+
+            $query = Product::query()
+                ->active()
+                ->inStock()
+                ->whereHas('vendor', function ($q) {
+                    $q->approved();
+                })
+                ->select([
+                    'id',
+                    'name',
+                    'slug',
+                    'vendor_id',
+                    'category_id',
+                    'brand_id',
+                    'price',
+                    'discount_price',
+                    'sku',
+                    'stock_quantity',
+                    'thumbnail_id'
+                ])
+                ->with([
+                    'thumbnailImage:id,image',
+                    'category:id,name,slug',
+                    'brand:id,name,slug',
+                    'vendor:id,shop_name,shop_slug'
+                ])
+                ->orderBy('id');
+
+
+            if (!empty($searchKey)) {
+
+                $query->whereFullText(
+                    ['name', 'description', 'meta_title', 'meta_description'],
+                    $searchKey
+                );
+                
+            }
+
+            $productsCollection = $query->get();
+
+            $paginated = GlobalPaginator::paginateCollection(collect($productsCollection), $perPage, $page);
+            return GlobalPaginator::format($paginated);
+        });
+    }
 }

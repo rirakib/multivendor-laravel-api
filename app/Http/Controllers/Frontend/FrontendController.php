@@ -6,6 +6,7 @@ use App\GraphQL\Queries\CategoryQuery;
 use App\GraphQL\Queries\ProductQuery;
 use App\Helpers\ResponseHelper;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 
 class FrontendController extends Controller
 {
@@ -49,6 +50,34 @@ class FrontendController extends Controller
             $resolver = new ProductQuery();
             $data = $resolver->vendorWiseProduct($slug);
             return ResponseHelper::success($data, $message = "Vendor products fetched successfully...");
+        } catch (\Throwable $th) {
+            return ResponseHelper::error($th->getMessage(), 500);
+        }
+    }
+
+
+    public function categoryWiseProduct($slug)
+    {
+        try {
+            $resolver = new CategoryQuery();
+            $data = $resolver->categoryWiseProduct($slug);
+            return ResponseHelper::success($data, $message = "Category products fetched successfully...");
+        } catch (\Throwable $th) {
+            return ResponseHelper::error($th->getMessage(), 500);
+        }
+    }
+
+    public function productSearch(Request $request)
+    {
+        try {
+
+            $request->validate([
+                'search_key' => 'required|string'
+            ]);
+
+            $resolver = new ProductQuery();
+            $data = $resolver->productSearch($request->search_key);
+            return ResponseHelper::success($data, $message = "Products fetched successfully...");
         } catch (\Throwable $th) {
             return ResponseHelper::error($th->getMessage(), 500);
         }
