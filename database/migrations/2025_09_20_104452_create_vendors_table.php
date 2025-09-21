@@ -22,6 +22,10 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->enum('status', ['pending', 'approved', 'suspended'])->default('pending');
             $table->timestamps();
+
+            $table->index('status');
+            $table->index('address');
+            $table->index(['shop_slug', 'status'], 'idx_shop_slug_status');
         });
     }
 

@@ -5,6 +5,7 @@ namespace App\GraphQL\Queries;
 use App\Helpers\GlobalPaginator;
 use App\Models\Product\Category;
 use App\Models\Product\Product;
+use App\Models\Vendor\Vendor;
 use Illuminate\Support\Facades\Cache;
 
 class ProductQuery
@@ -19,10 +20,13 @@ class ProductQuery
 
         $page = request()->get('page', 1);
         $perPage = request()->get('per_page', 20);
-
+        Cache::clear();
         return Cache::remember("products_page_{$page}_{$perPage}", 3600, function () use ($page, $perPage) {
             $query = Product::active()
                 ->inStock()
+                ->whereHas('vendor', function ($q) {
+                    $q->approved();
+                })
                 ->select([
                     'id',
                     'name',
@@ -57,7 +61,7 @@ class ProductQuery
 
     public function productDetails($slug)
     {
-   
+
         return Cache::remember("product_details_{$slug}", 3600, function () use ($slug) {
 
             // Fetch the product with related data
@@ -77,7 +81,6 @@ class ProductQuery
                 abort(404, 'Product not found');
             }
 
-            // Optionally format product data
             $data = [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -107,6 +110,50 @@ class ProductQuery
             ];
 
             return $data;
+        });
+    }
+
+
+    public function vendorWiseProduct($slug)
+    {
+
+        $page = request()->get('page', 1);
+        $perPage = request()->get('per_page', 20);
+        $cacheKey = "vendor_{$slug}_products_page_{$page}_{$perPage}";
+        Cache::clear();
+        return Cache::remember($cacheKey, 3600, function () use ($slug, $page, $perPage) {
+
+            $query = Product::query()
+                ->select([
+                    'id',
+                    'name',
+                    'slug',
+                    'vendor_id',
+                    'category_id',
+                    'brand_id',
+                    'price',
+                    'discount_price',
+                    'sku',
+                    'stock_quantity',
+                    'thumbnail_id',
+                ])
+                ->active()
+                ->inStock()
+                ->whereHas('vendor', function ($q) use ($slug) {
+                    $q->approved()->where('shop_slug', $slug);
+                })
+                ->with([
+                    'thumbnailImage:id,image',
+                    'category:id,name,slug',
+                    'brand:id,name,slug',
+                    'vendor:id,shop_name,shop_slug'
+                ])
+                ->orderBy('id');
+
+            $productsCollection = $query->get();
+
+            $paginated = GlobalPaginator::paginateCollection(collect($productsCollection), $perPage, $page);
+            return GlobalPaginator::format($paginated);
         });
     }
 }
