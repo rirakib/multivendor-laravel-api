@@ -2,7 +2,9 @@
 
 namespace App\Helpers;
 
+use App\Models\Frontend\AuditLog;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class GlobalHelper
 {
@@ -33,5 +35,21 @@ class GlobalHelper
             'to' => $paginator->lastItem(),
             'data' => $paginator->items(),
         ];
+    }
+
+
+    public static function auditLog(string $action, $entity = null, array $oldValues = [], array $newValues = [])
+    {
+        return AuditLog::create([
+            'user_id'     => Auth::id(),
+            'guest_token' => request()->header('X-Guest-Token'),
+            'action'      => $action,
+            'entity_type' => $entity ? get_class($entity) : null,
+            'entity_id'   => $entity?->id,
+            'old_values'  => $oldValues ?: null,
+            'new_values'  => $newValues ?: null,
+            'ip_address'  => request()->ip(),
+            'user_agent'  => request()->userAgent(),
+        ]);
     }
 }

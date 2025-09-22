@@ -3,9 +3,7 @@
 namespace App\GraphQL\Queries;
 
 use App\Helpers\GlobalPaginator;
-use App\Models\Product\Category;
 use App\Models\Product\Product;
-use App\Models\Vendor\Vendor;
 use Illuminate\Support\Facades\Cache;
 
 class ProductQuery
@@ -162,7 +160,6 @@ class ProductQuery
     {
         $page = request()->get('page', 1);
         $perPage = request()->get('per_page', 20);
-
         $searchKey = trim($key);
 
         $cacheKey = "products_search_" . md5($searchKey) . "_page_{$page}_{$perPage}";
@@ -186,29 +183,28 @@ class ProductQuery
                     'discount_price',
                     'sku',
                     'stock_quantity',
-                    'thumbnail_id'
+                    'thumbnail_id',
                 ])
                 ->with([
                     'thumbnailImage:id,image',
                     'category:id,name,slug',
                     'brand:id,name,slug',
                     'vendor:id,shop_name,shop_slug'
-                ])
-                ->orderBy('id');
+                ]);
 
-
+           
             if (!empty($searchKey)) {
-
-                $query->whereFullText(
-                    ['name', 'description', 'meta_title', 'meta_description'],
-                    $searchKey
-                );
-                
+              
+                $query->selectRaw("MATCH(name, description, meta_title, meta_description) AGAINST(? IN NATURAL LANGUAGE MODE) AS relevance", [$searchKey])
+                    ->whereRaw("MATCH(name, description, meta_title, meta_description) AGAINST(? IN NATURAL LANGUAGE MODE)", [$searchKey])
+                    ->orderByDesc('relevance'); 
+            } else {
+               
+                $query->orderByDesc('id');
             }
 
-            $productsCollection = $query->get();
-
-            $paginated = GlobalPaginator::paginateCollection(collect($productsCollection), $perPage, $page);
+          
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
             return GlobalPaginator::format($paginated);
         });
     }
