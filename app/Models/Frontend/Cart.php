@@ -2,31 +2,34 @@
 
 namespace App\Models\Frontend;
 
-use App\Models\User;
+use App\Models\Product\Product;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Cart extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'user_id',
         'guest_token',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    */
+    /**
+     * একজন user বা guest এর cart items
+     */
     public function items()
     {
         return $this->hasMany(CartItem::class);
     }
 
+
+    public function product(){
+        return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * User relation (optional)
+     */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(\App\Models\User::class);
     }
 }

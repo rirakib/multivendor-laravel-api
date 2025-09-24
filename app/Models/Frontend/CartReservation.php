@@ -4,22 +4,22 @@ namespace App\Models\Frontend;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CartItem extends Model
+class CartReservation extends Model
 {
     protected $fillable = [
-        'cart_id',
+        'cart_item_id',
         'product_id',
         'product_attribute_id',
         'quantity',
-        'price',
+        'reserved_until',
     ];
 
     /**
-     * belongs to cart
+     * belongs to cart item
      */
-    public function cart()
+    public function cartItem()
     {
-        return $this->belongsTo(Cart::class);
+        return $this->belongsTo(CartItem::class);
     }
 
     /**
@@ -31,18 +31,10 @@ class CartItem extends Model
     }
 
     /**
-     * belongs to product attribute (variant)
+     * belongs to product attribute
      */
     public function attribute()
     {
         return $this->belongsTo(\App\Models\Product\ProductAttribute::class, 'product_attribute_id');
-    }
-
-    /**
-     * one reservation per cart item
-     */
-    public function reservation()
-    {
-        return $this->hasOne(CartReservation::class);
     }
 }

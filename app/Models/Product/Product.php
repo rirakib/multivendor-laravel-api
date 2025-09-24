@@ -5,9 +5,11 @@ namespace App\Models\Product;
 use App\Models\Vendor\Vendor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Scout\Searchable;
 
 class Product extends Model
 {
+    use Searchable;
 
     protected $appends = ['thumbnail_image', 'image_path'];
 

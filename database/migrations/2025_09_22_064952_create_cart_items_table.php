@@ -16,8 +16,7 @@ return new class extends Migration
 
             $table->foreignId('cart_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
-
-            $table->json('attributes')->nullable();
+            $table->foreignId('product_attribute_id')->nullable()->constrained()->onDelete('cascade'); // optional, attribute-specific
 
             $table->unsignedInteger('quantity')->default(1);
             $table->decimal('price', 10, 2);
@@ -27,7 +26,8 @@ return new class extends Migration
             $table->index('cart_id');
             $table->index('product_id');
             $table->index('created_at');
-            $table->unique(['cart_id', 'product_id', 'attributes']);
+
+            $table->unique(['cart_id', 'product_id', 'product_attribute_id']);
         });
     }
 
